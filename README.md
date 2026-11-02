@@ -35,6 +35,7 @@ supported options with defaults, examples, report output and cleanup behavior.
 | Connectivity matrix (VM-to-VM across vNets) | [docs/conn_matrix](./docs/conn_matrix.md) | `validation.run_conn_matrix` | off | `conn_matrix` |
 | VM lifecycle (per-host power, reboot, console, migration) | [docs/vm_lifecycle](./docs/vm_lifecycle.md) | `validation.run_vm_lifecycle` | off | `vm_lifecycle` |
 | LDAP authentication | [docs/ldap_auth](./docs/ldap_auth.md) | `validation.run_ldap_auth` | off | `ldap_auth` |
+| Host monitoring after offline/reboot/enable (**disruptive**: reboots one node per cluster) | [docs/host_reboot](./docs/host_reboot.md) | `validation.run_host_reboot` | off | `host_reboot` |
 | VM High Availability (**destructive**: fences a host) | [docs/vm-ha](./docs/vm-ha.md) | `validation.run_vm_ha` | off | `vm_ha` |
 | Front-end High Availability (leader failover) | [docs/fe_ha](./docs/fe_ha.md) | `validation.run_fe_ha` | off | `fe_ha` |
 | Federation | [docs/federation](./docs/federation.md) | `validation.run_federation` | off | `federation` |
@@ -52,8 +53,9 @@ endpoint the suite may contact (per source machine, with the config keys that av
 each access) — the whitelist for environments with restricted internet access.
 
 Tests are ordered so that destructive actions cannot poison other results: OneFlow runs
-before Core Services (whose oned restarts destabilize an HA leader for minutes), and VM HA
-runs last (a fenced, powered-off node must not fail the non-destructive checks).
+before Core Services (whose oned restarts destabilize an HA leader for minutes), host reboot
+runs after ordinary checks, and VM HA runs afterward (a fenced, powered-off node must not fail
+the other checks). A failed host reboot skips VM HA.
 
 ## Requirements
 

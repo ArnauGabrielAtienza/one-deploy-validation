@@ -253,7 +253,7 @@
   {%- if items | length > 0 -%}
   <section class="rst-section">
     <button class="rst-header" type="button" onclick="toggleTable('table-{{ table_id }}', 'tog-{{ table_id }}')">
-      <h3>{{ section_title }} ({{ items | length }} checks)</h3><span class="tog" id="tog-{{ table_id }}">v</span>
+      <h3>{{ section_title }} ({{ items | length | string }} checks)</h3><span class="tog" id="tog-{{ table_id }}">v</span>
     </button>
     <table class="rtable" id="table-{{ table_id }}"><tbody>
       {%- for k, v in items %}
@@ -890,6 +890,8 @@
      'prefixes': ['OneFlow']},
     {'label': 'LDAP authentication', 'flag': validation_vars.run_ldap_auth | default(false),
      'prefixes': ['LDAP', 'OpenNebula LDAP auth driver', 'OpenNebula group mapping', 'XML-RPC (RPC2) login (LDAP)', 'FireEdge UI login (LDAP)', 'Local auth fallback']},
+    {'label': 'Host reboot',         'flag': validation_vars.run_host_reboot | default(false),
+     'prefixes': ['Host reboot: monitoring recovery']},
     {'label': 'VM HA',               'flag': validation_vars.run_vm_ha | default(false),
      'prefixes': ['VM HA']},
     {'label': 'FE HA',               'flag': validation_vars.run_fe_ha | default(false),

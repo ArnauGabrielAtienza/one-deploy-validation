@@ -272,6 +272,22 @@
     - role: validation
       when: not (_gb_pre | bool)
 
+# Set one monitored hypervisor per cluster offline, reboot it, enable it,
+# and verify that OpenNebula reports it as MONITORED. Run after ordinary
+# checks, before VM HA, so a failed reboot cannot be followed by fencing.
+- hosts: "{{ frontend_group | d('frontend') }}"
+  vars:
+    _gb_pre: "{{ (gpu_benchmark_phase | d((gpu_benchmark | d({})).phase | d('post'), true)) == 'pre' }}"
+  tasks:
+    - name: Host reboot monitoring recovery validation
+      ansible.builtin.import_role:
+        name: host_reboot
+      tags: [host_reboot]
+      when:
+        - validation.run_host_reboot | d(false)
+        - not (_gb_pre | bool)
+        - inventory_hostname == groups[frontend_group | d('frontend')][0]
+
 # VM HA Validation — destructive (fences a hypervisor): runs AFTER every
 # non-destructive test so a powered-off node cannot fail their checks
 # (observed: the core-services host-cycle check failing on the fenced host).
@@ -279,6 +295,18 @@
   vars:
     _gb_pre: "{{ (gpu_benchmark_phase | d((gpu_benchmark | d({})).phase | d('post'), true)) == 'pre' }}"
   tasks:
+    - name: Record VM HA skipped after host reboot failure
+      ansible.builtin.set_fact:
+        verification_result: >-
+          {{ (verification_result | d({}))
+             | combine({'VM HA validation': 'skipped - host reboot did not recover'}) }}
+      tags: [vm_ha]
+      when:
+        - validation.run_vm_ha | d(false)
+        - not (_gb_pre | bool)
+        - inventory_hostname == groups[frontend_group | d('frontend')][0]
+        - host_reboot_failed | d(false) | bool
+
     # import_role (static) — with a dynamic include_role the tag does NOT
     # propagate to the role's tasks and `-t vm_ha` silently runs nothing.
     - name: VM HA Validation
@@ -288,6 +316,7 @@
       when:
         - validation.run_vm_ha | d(false)
         - not (_gb_pre | bool)
+        - not (hostvars[groups[frontend_group | d('frontend')][0]].host_reboot_failed | d(false) | bool)
 
 # Run FE HA verification only when variable run_fe_ha is set to true
 - hosts: "{{ frontend_group | d('frontend') }}"

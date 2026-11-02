@@ -393,6 +393,16 @@ validation:
     rpc2_path: "/RPC2"
     rpc2_skip_tls_verify: true
 
+  # TEST CASE NAME: Host monitoring recovery after normal reboot
+  # Reboots one monitored hypervisor per validated cluster, even if it runs
+  # VMs. Sets the OpenNebula host offline first, then enables it after reboot.
+  # The selected host must return to MONITORED after being enabled.
+  run_host_reboot: false
+  host_reboot:
+    reboot_timeout: 600
+    monitoring_timeout: 600
+    poll_interval: 10
+
   # TEST CASE NAME: VM High Availability
   # DESCRIPTION: The prerequisite is to have VM HA configured, see details in OpenNebula documentation.
   # Instantiates a VM and produces an error on its host with a configurable method (e.g. bringing the
