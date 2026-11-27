@@ -186,15 +186,25 @@ class DiskProbe:
     def detach(self):
         vm = self.running()
         disk = self.disk(vm)
-        if not disk or str(disk["DISK_ID"]) != self.state["disk_id"]:
+        disk_id = self.state["disk_id"]
+        if not disk or str(disk["DISK_ID"]) != disk_id:
             raise ProbeError("Cannot identify the disk to detach")
-        self.vm_action("disk-detach", self.state["disk_id"])
+        previous_error = vm.get("USER_TEMPLATE", {}).get("ERROR", "")
+        self.vm_action("disk-detach", disk_id)
 
         def detached():
             current = vm_info(self.state["vm_id"])
+            if not vm_running(current, self.host):
+                return False
+            # OpenNebula returns to RUNNING after either result. A failed
+            # driver action leaves a new DETACHDISK message on the VM.
+            error = current.get("USER_TEMPLATE", {}).get("ERROR", "")
+            if error != previous_error and "DETACHDISK:" in error:
+                raise FatalProbeError(
+                    "VM %s disk %s: %s" % (self.state["vm_id"], disk_id, error)
+                )
             disk_ids = [str(d["DISK_ID"]) for d in rows(current["TEMPLATE"].get("DISK"))]
-            return (vm_running(current, self.host) and self.state["disk_id"] not in disk_ids
-                    and not self.disk(current))
+            return disk_id not in disk_ids and not self.disk(current)
 
         self.wait(detached, "hot-detached disk to disappear from the VM template")
         self.wait(lambda: not serial_device(inventory(guest_ip(vm)), self.state["serial"]),
